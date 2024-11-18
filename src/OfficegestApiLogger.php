@@ -48,7 +48,9 @@ final class OfficegestApiLogger
                 'body' => json_encode($data),
             ]);
         } catch (\Exception $e) {
-            Log::error('OFFICEGEST_API_LOGGER | ' . $e->getMessage());
+            if (config('app.debug')) {
+                Log::error('OFFICEGEST_API_LOGGER | ' . $e->getMessage());
+            }
         }
     }
 }
