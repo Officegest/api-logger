@@ -35,7 +35,7 @@ final class OfficegestApiLogger
                 'version' => self::VERSION,
                 'sdk' => 'laravel',
                 'user' => auth()->user()->username ?? null,
-                '@timestamp' => date('Y-m-d H:i:s.v'),
+                'timestamp' => date('Y-m-d H:i:s.v'),
             ],
             [
                 'data' => $data->__toArray(),
