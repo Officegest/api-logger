@@ -7,6 +7,7 @@ namespace OfficegestApiLogger;
 use Illuminate\Support\Facades\Log;
 use OfficegestApiLogger\DataObjects\Data;
 use OfficegestApiLogger\Exceptions\ConfigurationException;
+
 use function in_array;
 
 final class OfficegestApiLogger
@@ -44,7 +45,7 @@ final class OfficegestApiLogger
         try {
             $client = \Elastic\Elasticsearch\ClientBuilder::create()->setHosts([config('officegest-api-logger-config.host')])->build();
             $client->index([
-                'index' => config('officegest-api-logger-config.index'),
+                'index' => config('officegest-api-logger-config.index') . '_' . date('Ymd'),
                 'body' => json_encode($data),
             ]);
         } catch (\Exception $e) {
