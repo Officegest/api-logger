@@ -13,6 +13,7 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Laravel\Octane\Events\RequestReceived;
 use OfficegestApiLogger\Masks\FieldMasker;
+
 use function config;
 
 final class OfficegestApiLoggerServiceProvider extends ServiceProvider implements DeferrableProvider
@@ -54,9 +55,9 @@ final class OfficegestApiLoggerServiceProvider extends ServiceProvider implement
             section: 'OfficegestApiLogger',
             data: static fn(): array => [
                 'Version' => OfficegestApiLogger::VERSION,
-                'host' => config('officegest-api-logger.host'),
-                'index' => config('officegest-api-logger.index'),
-                'Ignored Environments' => config('officegest-api-logger.ignore_environments'),
+                'host' => config('officegest-api-logger-config.host'),
+                'index' => config('officegest-api-logger-config.index'),
+                'Ignored Environments' => config('officegest-api-logger-config.ignore_environments'),
             ],
         );
     }
