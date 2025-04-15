@@ -6,6 +6,13 @@ return [
      */
     'host' => env('API_LOGGER_ELASTIC_HOST', null),
 
+    /**
+     * auth credentials
+     */
+
+    'username' => env('API_LOGGER_ELASTIC_USERNAME', null),
+    'password' => env('API_LOGGER_ELASTIC_PASSWORD', null),
+
     /*
      * A valid OfficegestApiLogger project ID. Create your first project on https://officegest.com/
      */

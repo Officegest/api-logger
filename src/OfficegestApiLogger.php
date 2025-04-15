@@ -43,7 +43,22 @@ final class OfficegestApiLogger
         );
 
         try {
-            $client = \Elastic\Elasticsearch\ClientBuilder::create()->setHosts([config('officegest-api-logger-config.host')])->build();
+
+            $username = config('officegest-api-logger-config.username');
+            $password = config('officegest-api-logger-config.password');
+
+
+           $clientBuilder = \Elastic\Elasticsearch\ClientBuilder::create()
+            ->setHosts([config('officegest-api-logger-config.host')])
+            ->setSSLVerification(false);
+
+            // Adiciona autenticação apenas se username e password estiverem preenchidos
+            if (!empty($username) && !empty($password)) {
+                $clientBuilder->setBasicAuthentication($username, $password);
+            }
+
+            $client = $clientBuilder->build();
+
             $client->index([
                 'index' => config('officegest-api-logger-config.index') . '_' . date('Ymd'),
                 'body' => json_encode($data),
