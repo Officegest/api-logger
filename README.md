@@ -13,8 +13,13 @@ can configure this package.
 
 You need add this variables to your .env
 
-    API_LOGGER_ELASTIC_HOST=true
-    API_LOGGER_ELASTIC_LOGS_INDEX="your_officegest_url"
+    API_LOGGER_ELASTIC_HOST="your_elastic_url:port"
+    API_LOGGER_ELASTIC_LOGS_INDEX="your_index_name"
+    
+    ## Optional
+    #API_LOGGER_ELASTIC_USERNAME="your_user"
+    #API_LOGGER_ELASTIC_PASSWORD="your_password"
+
 
 ## Usage
 
