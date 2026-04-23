@@ -25,9 +25,7 @@ final class DataFactory
 {
     public function __construct(
         private readonly FieldMasker $masker,
-    )
-    {
-    }
+    ) {}
 
     public function make(Request $request, JsonResponse|Response|SymfonyResponse $response, float|int $loadTime): Data
     {
@@ -37,15 +35,15 @@ final class DataFactory
 
         try {
             $responseBody = $this->masker->mask(
-                (array)json_decode(
-                    (string)$response->getContent(),
+                (array) json_decode(
+                    (string) $response->getContent(),
                     true,
                     512,
                     JSON_THROW_ON_ERROR,
                 ),
             );
         } catch (Throwable) {
-            $responseBody = '{}';
+            $responseBody = [];
         }
 
         if (!empty($response->exception)) {
@@ -60,18 +58,18 @@ final class DataFactory
 
         return new Data(
             new Server(
-                (string)$request->server('SERVER_ADDR'),
-                (string)config('app.timezone'),
-                (string)$request->server('SERVER_SOFTWARE'),
-                (string)$request->server('SERVER_SIGNATURE'),
-                (string)$request->server('SERVER_PROTOCOL'),
+                (string) $request->server('SERVER_ADDR'),
+                (string) config('app.timezone'),
+                (string) $request->server('SERVER_SOFTWARE'),
+                (string) $request->server('SERVER_SIGNATURE'),
+                (string) $request->server('SERVER_PROTOCOL'),
                 new OS(
                     php_uname('s'),
                     php_uname('r'),
                     php_uname('m'),
                 ),
-                (string)$request->server('HTTP_ACCEPT_ENCODING'),
-                (string)gethostname(),
+                (string) $request->server('HTTP_ACCEPT_ENCODING'),
+                (string) gethostname(),
             ),
             new Language(
                 'php',
@@ -85,16 +83,16 @@ final class DataFactory
             ),
             new RequestObject(
                 Carbon::now('UTC')->format('Y-m-d H:i:s.v'),
-                (string)$request->ip(),
+                (string) $request->ip(),
                 $request->fullUrl(),
                 $request->route()?->toSymfonyRoute()->getPath(),
-                (string)$request->userAgent(),
+                (string) $request->userAgent(),
                 Method::from(
                     $request->method(),
                 ),
                 $this->masker->mask(
                     collect($request->headers->all())->transform(
-                    /* @phpstan-ignore-next-line */
+                        /* @phpstan-ignore-next-line */
                         fn($item) => collect($item)->first(),
                     )->toArray(),
                 ),
@@ -108,12 +106,12 @@ final class DataFactory
             new ResponseObject(
                 $this->masker->mask(
                     collect($response->headers->all())->transform(
-                    /* @phpstan-ignore-next-line */
+                        /* @phpstan-ignore-next-line */
                         fn($item) => collect($item)->first(),
                     )->toArray(),
                 ),
                 $response->getStatusCode(),
-                \strlen((string)$response->getContent()),
+                \strlen((string) $response->getContent()),
                 $loadTime,
                 $responseBody,
             ),

@@ -1,5 +1,10 @@
 # Changelog
 
+2026-04-23 - 1.4.1
+
+    fixed DataFactory fallback returning the string `'{}'` when the response body is not valid JSON; Elasticsearch maps `data.response.body` as a `flattened` field and rejected VALUE_STRING tokens with a parsing_exception, opening the circuit breaker on every non-JSON response. Fallback now returns an empty array (`[]`), matching the `flattened` mapping;
+    added DataFactoryTest covering the empty-array fallback for non-JSON and empty response bodies, plus the happy path for valid JSON;
+
 2026-04-20 - 1.4.0
 
     added circuit breaker around Elasticsearch writes; aggressive HTTP timeouts (connect 1s, total 1.5s) and setRetries(0) so an unreachable Elasticsearch host cannot stall the PHP-FPM worker during terminate();
