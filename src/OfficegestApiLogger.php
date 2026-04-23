@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace OfficegestApiLogger;
 
+use Closure;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use OfficegestApiLogger\DataObjects\Data;
@@ -15,6 +16,31 @@ use function in_array;
 final class OfficegestApiLogger
 {
     public const VERSION = '1.0';
+
+    /**
+     * Application-supplied callback that returns extra fields to attach to
+     * every log payload under the `context` key. Invoked inside `log()` and
+     * wrapped in a try/catch so a faulty resolver never escalates to the
+     * caller. Pass `null` to clear (useful in tests and Octane resets).
+     */
+    private static ?Closure $contextResolver = null;
+
+    /**
+     * Register a callback whose return array is merged into the payload
+     * under the `context` key. The callback runs on every `log()` call,
+     * receives no arguments, and must return an array keyed by string.
+     * Non-array returns and thrown exceptions are silently discarded so
+     * the logger remains best-effort.
+     *
+     * Example:
+     *   OfficegestApiLogger::resolveContextUsing(fn () => [
+     *       'tenant_id' => tenant()?->id,
+     *   ]);
+     */
+    public static function resolveContextUsing(?Closure $callback): void
+    {
+        self::$contextResolver = $callback;
+    }
 
     /**
      * Send request and response payload to OfficegestApiLogger for processing.
@@ -55,6 +81,7 @@ final class OfficegestApiLogger
                 'timestamp' => date('Y-m-d H:i:s.v'),
             ],
             [
+                'context' => self::resolveContext(),
                 'data' => $data->__toArray(),
             ],
         );
@@ -101,5 +128,23 @@ final class OfficegestApiLogger
                 'ttl' => $circuitTtl,
             ]);
         }
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private static function resolveContext(): array
+    {
+        if (self::$contextResolver === null) {
+            return [];
+        }
+
+        try {
+            $context = (self::$contextResolver)();
+        } catch (Throwable) {
+            return [];
+        }
+
+        return is_array($context) ? $context : [];
     }
 }

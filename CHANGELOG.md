@@ -1,5 +1,10 @@
 # Changelog
 
+2026-04-23 - 1.5.0
+
+    added `OfficegestApiLogger::resolveContextUsing(?Closure $callback)` hook so host applications can attach custom fields to every log payload (e.g. `tenant_id`, `correlation_id`) without forking the package. The callback runs on every `log()` call, receives no arguments, and its return array is merged into the payload under a new top-level `context` key. Non-array returns and thrown exceptions are silently discarded so the logger remains best-effort and never escalates to the caller;
+    added ContextResolverTest with 6 cases covering empty default, happy path, exception swallowing, non-array coercion, null clearing, and end-to-end compatibility with the circuit breaker;
+
 2026-04-23 - 1.4.1
 
     fixed DataFactory fallback returning the string `'{}'` when the response body is not valid JSON; Elasticsearch maps `data.response.body` as a `flattened` field and rejected VALUE_STRING tokens with a parsing_exception, opening the circuit breaker on every non-JSON response. Fallback now returns an empty array (`[]`), matching the `flattened` mapping;
