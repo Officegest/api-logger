@@ -43,6 +43,25 @@ final class OfficegestApiLogger
     }
 
     /**
+     * Application-supplied factory that returns a pre-configured Elasticsearch
+     * client. Primarily an extension point for host apps that need custom
+     * timeouts, retry policies, or a drop-in replacement of the ES client; also
+     * lets tests inject a client that throws a specific exception without
+     * relying on overload mocks. When `null`, the default builder below is used.
+     */
+    private static ?Closure $clientBuilderFactory = null;
+
+    /**
+     * Register a callback that returns a built `\Elastic\Elasticsearch\Client`.
+     * Pass `null` to reset to the default builder (useful in tests and Octane
+     * resets).
+     */
+    public static function useClientBuilderFactory(?Closure $callback): void
+    {
+        self::$clientBuilderFactory = $callback;
+    }
+
+    /**
      * Send request and response payload to OfficegestApiLogger for processing.
      *
      * @throws ConfigurationException
@@ -90,27 +109,39 @@ final class OfficegestApiLogger
         $timeout = (float) config('officegest-api-logger-config.elastic.timeout', 1.5);
 
         try {
-            $username = config('officegest-api-logger-config.username');
-            $password = config('officegest-api-logger-config.password');
+            $client = self::$clientBuilderFactory !== null
+                ? (self::$clientBuilderFactory)()
+                : (function () use ($timeout, $connectTimeout): \Elastic\Elasticsearch\Client {
+                    $username = config('officegest-api-logger-config.username');
+                    $password = config('officegest-api-logger-config.password');
 
-            $clientBuilder = \Elastic\Elasticsearch\ClientBuilder::create()
-                ->setHosts([config('officegest-api-logger-config.host')])
-                ->setSSLVerification(false)
-                ->setRetries(0)
-                ->setHttpClientOptions([
-                    'timeout' => $timeout,
-                    'connect_timeout' => $connectTimeout,
-                ]);
+                    $clientBuilder = \Elastic\Elasticsearch\ClientBuilder::create()
+                        ->setHosts([config('officegest-api-logger-config.host')])
+                        ->setSSLVerification(false)
+                        ->setRetries(0)
+                        ->setHttpClientOptions([
+                            'timeout' => $timeout,
+                            'connect_timeout' => $connectTimeout,
+                        ]);
 
-            if (!empty($username) && !empty($password)) {
-                $clientBuilder->setBasicAuthentication($username, $password);
-            }
+                    if (!empty($username) && !empty($password)) {
+                        $clientBuilder->setBasicAuthentication($username, $password);
+                    }
 
-            $client = $clientBuilder->build();
+                    return $clientBuilder->build();
+                })();
 
             $client->index([
                 'index' => config('officegest-api-logger-config.index') . '_' . date('Ymd'),
                 'body' => json_encode($payload),
+            ]);
+        } catch (\Elastic\Elasticsearch\Exception\ClientResponseException $e) {
+            $logger = $logChannel !== null ? Log::channel((string) $logChannel) : Log::driver();
+            $logger->warning('OfficegestApiLogger document rejected', [
+                'error' => $e->getMessage(),
+                'host' => config('officegest-api-logger-config.host'),
+                'url' => $data->request->url ?? null,
+                'trace_id' => $data->request->headers['x-officegest-api-logger-trace-id'] ?? null,
             ]);
         } catch (Throwable $e) {
             if ($circuitEnabled) {

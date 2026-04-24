@@ -136,4 +136,62 @@ final class CircuitBreakerTest extends TestCase
 
         OfficegestApiLogger::log($this->data);
     }
+
+    #[Test]
+    public function does_not_open_circuit_on_client_response_exception(): void
+    {
+        OfficegestApiLogger::useClientBuilderFactory(function (): \Elastic\Elasticsearch\ClientInterface {
+            $client = Mockery::mock(\Elastic\Elasticsearch\ClientInterface::class);
+            $client->shouldReceive('index')->andThrow(
+                new \Elastic\Elasticsearch\Exception\ClientResponseException('400 Bad Request'),
+            );
+            return $client;
+        });
+
+        Cache::shouldReceive('has')->once()->andReturn(false);
+        Cache::shouldReceive('put')->never();
+
+        Log::shouldReceive('driver')->andReturnSelf();
+        Log::shouldReceive('warning')
+            ->once()
+            ->with('OfficegestApiLogger document rejected', Mockery::on(
+                static fn ($context): bool => is_array($context)
+                    && array_key_exists('error', $context)
+                    && array_key_exists('host', $context)
+                    && array_key_exists('url', $context)
+                    && array_key_exists('trace_id', $context),
+            ));
+
+        OfficegestApiLogger::log($this->data);
+    }
+
+    #[Test]
+    public function still_opens_circuit_on_server_response_exception(): void
+    {
+        OfficegestApiLogger::useClientBuilderFactory(function (): \Elastic\Elasticsearch\ClientInterface {
+            $client = Mockery::mock(\Elastic\Elasticsearch\ClientInterface::class);
+            $client->shouldReceive('index')->andThrow(
+                new \Elastic\Elasticsearch\Exception\ServerResponseException('500 Internal Server Error'),
+            );
+            return $client;
+        });
+
+        Cache::shouldReceive('has')->once()->andReturn(false);
+        Cache::shouldReceive('put')
+            ->once()
+            ->with('officegest-api-logger:circuit:open', 1, 120);
+
+        Log::shouldReceive('driver')->andReturnSelf();
+        Log::shouldReceive('warning')
+            ->once()
+            ->with('OfficegestApiLogger circuit opened', Mockery::any());
+
+        OfficegestApiLogger::log($this->data);
+    }
+
+    protected function tearDown(): void
+    {
+        OfficegestApiLogger::useClientBuilderFactory(null);
+        parent::tearDown();
+    }
 }

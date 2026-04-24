@@ -1,5 +1,11 @@
 # Changelog
 
+2026-04-24 - 1.6.0
+
+    changed Elasticsearch write error handling to split `ClientResponseException` (4xx) from transport/5xx/auth failures; 4xx responses (e.g. `document_parsing_exception` from a mapping conflict) no longer trip the circuit breaker. The breaker exists to protect FPM workers when Elasticsearch is unreachable, not to react to individual rejected documents — previously a single malformed payload (e.g. a frontend sending an object where a scalar was expected, poisoning a `text`-mapped field) silenced observability for all requests for 120s until the breaker reset;
+    added a distinct `'OfficegestApiLogger document rejected'` warning emitted on 4xx, carrying `error`, `host`, `url` and `trace_id` so operators can locate the misbehaving client without losing the rest of the log stream. The existing `'OfficegestApiLogger circuit opened'` warning is now emitted only for transport errors, 5xx, auth failures and cache-store failures;
+    updated CircuitBreakerTest to assert that `ClientResponseException` leaves the breaker closed and produces the `document rejected` warning, while other throwables still open the breaker;
+
 2026-04-23 - 1.5.0
 
     added `OfficegestApiLogger::resolveContextUsing(?Closure $callback)` hook so host applications can attach custom fields to every log payload (e.g. `tenant_id`, `correlation_id`) without forking the package. The callback runs on every `log()` call, receives no arguments, and its return array is merged into the payload under a new top-level `context` key. Non-array returns and thrown exceptions are silently discarded so the logger remains best-effort and never escalates to the caller;
