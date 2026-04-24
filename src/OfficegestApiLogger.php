@@ -105,23 +105,26 @@ final class OfficegestApiLogger
             ],
         );
 
-        $connectTimeout = (float) config('officegest-api-logger-config.elastic.connect_timeout', 1.0);
         $timeout = (float) config('officegest-api-logger-config.elastic.timeout', 1.5);
 
         try {
             $client = self::$clientBuilderFactory !== null
                 ? (self::$clientBuilderFactory)()
-                : (function () use ($timeout, $connectTimeout): \Elastic\Elasticsearch\Client {
+                : (function () use ($timeout): \Elastic\Elasticsearch\Client {
                     $username = config('officegest-api-logger-config.username');
                     $password = config('officegest-api-logger-config.password');
 
+                    // Only `timeout` is passed: Guzzle and Symfony HttpClient both accept it.
+                    // Guzzle also supports `connect_timeout` but Symfony HttpClient rejects
+                    // it with an "Unsupported option" exception, which depending on which
+                    // client php-http/discovery happens to pick would silently open the
+                    // circuit breaker on every log attempt.
                     $clientBuilder = \Elastic\Elasticsearch\ClientBuilder::create()
                         ->setHosts([config('officegest-api-logger-config.host')])
                         ->setSSLVerification(false)
                         ->setRetries(0)
                         ->setHttpClientOptions([
                             'timeout' => $timeout,
-                            'connect_timeout' => $connectTimeout,
                         ]);
 
                     if (!empty($username) && !empty($password)) {

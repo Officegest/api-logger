@@ -1,5 +1,9 @@
 # Changelog
 
+2026-04-24 - 1.6.1
+
+    fixed the Elasticsearch HTTP client options passing `connect_timeout`, a Guzzle-only option that Symfony HttpClient rejects with "Unsupported option" and that depending on which client `php-http/discovery` picked would silently open the circuit breaker on every log attempt. Dropped the key from `setHttpClientOptions()`; only `timeout` is now passed, which both Guzzle and Symfony HttpClient accept. The bug had been latent since 1.4.0 and only surfaced in environments where Symfony HttpClient was discovered ahead of Guzzle. The `elastic.connect_timeout` config key is retained (silently ignored) to avoid breaking hosts that have it set in their `.env`;
+
 2026-04-24 - 1.6.0
 
     changed Elasticsearch write error handling to split `ClientResponseException` (4xx) from transport/5xx/auth failures; 4xx responses (e.g. `document_parsing_exception` from a mapping conflict) no longer trip the circuit breaker. The breaker exists to protect FPM workers when Elasticsearch is unreachable, not to react to individual rejected documents — previously a single malformed payload (e.g. a frontend sending an object where a scalar was expected, poisoning a `text`-mapped field) silenced observability for all requests for 120s until the breaker reset;
