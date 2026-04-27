@@ -17,21 +17,17 @@ final class Request
      * @param null|Method $method The HTTP method of the request, uppercase if possible.
      * @param array<int|string,string> $headers The request headers for the request in key:value format.
      * @param array<int|string,mixed> $body The complete request data sent with this request.
-     * @param array<int|string,mixed> $raw The raw body from the request.
      */
     public function __construct(
         public string             $timestamp,
         public string             $ip,
         public string             $url,
-        public null|string|object $route_path,
+        public string|object|null $route_path,
         public string             $user_agent,
-        public null|Method        $method,
+        public ?Method        $method,
         public array              $headers,
         public array              $body,
-        public array              $raw,
-    )
-    {
-    }
+    ) {}
 
     /**
      * @return array{
@@ -43,7 +39,6 @@ final class Request
      *     method: string|null,
      *     headers: array,
      *     body: array,
-     *     raw: array,
      * }
      */
     public function __toArray(): array
@@ -57,7 +52,6 @@ final class Request
             'method' => $this->method->value ?? null,
             'headers' => $this->headers,
             'body' => $this->body,
-            'raw' => $this->raw,
         ];
     }
 }

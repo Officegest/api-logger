@@ -80,7 +80,7 @@ final class OfficegestApiLoggerServiceProvider extends ServiceProvider implement
             key: 'officegest-api-logger-config',
         );
 
-        $fields = config('officegest-api-logger.masked_fields');
+        $fields = config('officegest-api-logger-config.masked_fields');
 
         $this->app->singleton(
             abstract: Masks\FieldMasker::class,

@@ -99,9 +99,6 @@ final class DataFactory
                 $this->masker->mask(
                     $request->all(),
                 ),
-                $this->masker->mask(
-                    $request->all(),
-                ),
             ),
             new ResponseObject(
                 $this->masker->mask(
